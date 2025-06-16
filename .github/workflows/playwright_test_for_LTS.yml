@@ -15,18 +15,25 @@ jobs:
 
       - name: Install pnpm
         run: npm install -g pnpm
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
+
+      - name: Prepare config.toml without comments
+        run: |
+          grep -v '^\s*#' config.toml.sample | grep -v '^\s*$' > config.toml
+
+      - name: Build project
+        run: pnpm run build
 
       - name: Run Playwright Tests
         run: pnpm exec playwright test
