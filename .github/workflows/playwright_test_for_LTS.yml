@@ -38,8 +38,17 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Serve build at port 9081
-        run: npx serve -s dist -l 9081
+      - name: Serve build at port 9081 (background)
+        run: |
+          npx serve -s dist -l 9081 > /dev/null 2>&1 &
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:9081 > /dev/null; then
+              echo "Server is up!"
+              break
+            fi
+            sleep 1
+          done
 
       - name: Run Playwright Tests
         run: pnpm exec playwright test
