@@ -32,6 +32,9 @@ jobs:
         run: |
           grep -v '^\s*#' config.toml.sample | grep -v '^\s*$' > config.toml
 
+      - name: Run Relay
+        run: pnpm run relay
+
       - name: Build project
         run: pnpm run build
 
