@@ -39,7 +39,8 @@ jobs:
 
       - name: Copy config.toml
         run: |
-          awk -v ep="${{ matrix.lts.apiEndpoint }}" '
+          EP="${{ matrix.lts.apiEndpoint }}"
+          awk -v ep="$EP" '
             /^[[:space:]]*$/ { next }
             /^\[.*\]$/ { if (n++) print ""; print; next }
             /^[[:space:]]*#[^=]/ { print; next }
