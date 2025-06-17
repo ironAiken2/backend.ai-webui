@@ -8,7 +8,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lts:
+          - name: "v25.6"
+            apiEndpoint: "http://10.122.12.148/8090"
+          - name: "v24.09"
+            apiEndpoint: "http://10.122.10.126:8090"
 
+    name: E2E Playwright Tests for LTS ${{ matrix.lts.name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,15 +38,18 @@ jobs:
 
       - name: Copy config.toml
         run: |
-          awk '
-          function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
-          BEGIN { first=1 }
-          {
-            if ($0 ~ /^[[:space:]]*$/) next
-            if ($0 ~ /^\[.*\]$/) { if (!first) print ""; print; first=0; next }
-            if ($0 ~ /^[[:space:]]*#[^=]/) { print; next }
-            split($0, a, "#"); s = trim(a[1]); if (s != "") print s
-          }
+          awk -v ep="${{ matrix.lts.apiEndpoint }}" '
+            /^[[:space:]]*$/ { next }
+            /^\[.*\]$/ { if (n++) print ""; print; next }
+            /^[[:space:]]*#[^=]/ { print; next }
+            {
+              sub(/#.*/, "", $0)
+              sub(/[[:space:]]+$/, "", $0)
+              if ($0 ~ /^apiEndpoint[[:space:]]*=/)
+                print "apiEndpoint = \"" ep "\""
+              else if ($0 != "")
+                print
+            }
           ' config.toml.sample > config.toml
 
       - name: Prepare config.toml
@@ -85,5 +96,5 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.lts.name }}
           path: playwright-report/
