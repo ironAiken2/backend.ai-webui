@@ -50,6 +50,15 @@ jobs:
             sleep 1
           done
 
+      - name: Prepare .env.playwright with local server URL
+        run: |
+          cp e2e/envs/.env.playwright.sample e2e/envs/.env.playwright
+          if grep -q '^BASE_URL=' e2e/envs/.env.playwright; then
+            sed -i 's|^BASE_URL=.*|BASE_URL=http://127.0.0.1:9081|' e2e/envs/.env.playwright
+          else
+            echo 'BASE_URL=http://127.0.0.1:9081' >> e2e/envs/.env.playwright
+          fi
+
       - name: Run Playwright Tests
         run: pnpm exec playwright test
 
