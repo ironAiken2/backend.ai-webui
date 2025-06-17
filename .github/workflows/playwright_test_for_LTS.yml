@@ -37,7 +37,7 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Copy config.toml
+      - name: Copy config.toml with endpoint injected
         run: |
           EP="${{ matrix.lts.apiEndpoint }}"
           awk -v ep="$EP" '
@@ -45,12 +45,14 @@ jobs:
             /^\[.*\]$/ { if (n++) print ""; print; next }
             /^[[:space:]]*#[^=]/ { print; next }
             {
-              sub(/#.*/, "", $0)
-              sub(/[[:space:]]+$/, "", $0)
-              if ($0 ~ /^apiEndpoint[[:space:]]*=/)
+              line = $0
+              if (line ~ /^apiEndpoint[[:space:]]*=/) {
                 print "apiEndpoint = \"" ep "\""
-              else if ($0 != "")
-                print
+                next
+              }
+              sub(/#.*/, "", line)
+              sub(/[[:space:]]+$/, "", line)
+              if (line != "") print line
             }
           ' config.toml.sample > config.toml
 
