@@ -28,9 +28,22 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
+      - name: Copy config.toml
+        run: |
+          awk '
+          function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+          BEGIN { first=1 }
+          {
+            if ($0 ~ /^[[:space:]]*$/) next
+            if ($0 ~ /^\[.*\]$/) { if (!first) print ""; print; first=0; next }
+            if ($0 ~ /^[[:space:]]*#[^=]/) { print; next }
+            split($0, a, "#"); s = trim(a[1]); if (s != "") print s
+          }
+          ' config.toml.sample > config.toml
+
       - name: Prepare config.toml
         run: |
-          grep -v '^\s*#' config.toml.sample | grep -v '^\s*$' > config.toml
+          sed -i 's|^apiEndpoint =.*|apiEndpoint = "http://127.0.0.1:9081"|' config.toml
 
       - name: Upload config.toml artifact
         uses: actions/upload-artifact@v4
