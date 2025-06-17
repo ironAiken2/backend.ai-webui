@@ -37,28 +37,32 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Copy config.toml with endpoint injected
+      - name: Copy config.toml.sample to config.toml
         run: |
-          EP="${{ matrix.lts.apiEndpoint }}"
-          awk -v ep="$EP" '
+          awk '
             /^[[:space:]]*$/ { next }
             /^\[.*\]$/ { if (n++) print ""; print; next }
             /^[[:space:]]*#[^=]/ { print; next }
             {
               line = $0
-              if (line ~ /^apiEndpoint[[:space:]]*=/) {
-                print "apiEndpoint = \"" ep "\""
-                next
-              }
               sub(/#.*/, "", line)
               sub(/[[:space:]]+$/, "", line)
               if (line != "") print line
             }
-          ' config.toml.sample > config.toml
+          ' config.toml.sample > config-cleaned.toml
 
-      - name: Prepare config.toml
+      - name: Inject apiEndpoint into config.toml
         run: |
-          sed -i 's|^apiEndpoint =.*|apiEndpoint = "http://127.0.0.1:9081"|' config.toml
+          EP="${{ matrix.lts.apiEndpoint }}"
+          awk -v ep="$EP" '
+            {
+              if ($0 ~ /^apiEndpoint[[:space:]]*=/) {
+                print "apiEndpoint = \"" ep "\""
+              } else {
+                print
+              }
+            }
+          ' config-cleaned.toml > config.toml
 
       - name: Upload config.toml artifact
         uses: actions/upload-artifact@v4
